@@ -1,4 +1,6 @@
-library(reshape2)
+#Install the required libraries
+library("plyr")
+library("data.table")
 
 filename <- "getdata_dataset.zip"
 
@@ -24,7 +26,6 @@ featuresWanted.names = gsub('-mean', 'Mean', featuresWanted.names)
 featuresWanted.names = gsub('-std', 'Std', featuresWanted.names)
 featuresWanted.names <- gsub('[-()]', '', featuresWanted.names)
 
-
 # Load the datasets
 train <- read.table("UCI HAR Dataset/train/X_train.txt")[featuresWanted]
 trainActivities <- read.table("UCI HAR Dataset/train/Y_train.txt")
@@ -36,15 +37,28 @@ testActivities <- read.table("UCI HAR Dataset/test/Y_test.txt")
 testSubjects <- read.table("UCI HAR Dataset/test/subject_test.txt")
 test <- cbind(testSubjects, testActivities, test)
 
+#Codes to Run
+melt_data = melt(data, id = id_labels, measure.vars = data_labels)
+features[,2] <- as.character(features[,2])
+columnsnames[,2] <- as.character(columnsnames[,2])
+featuresWanted <- grep(".*mean.*|.*std.*", columnsnames[,2])
+featuresWanted.names <- columnsnames[featuresWanted,2]
+"Respuesta 2 : data[,featuresWanted] "
+ActivitysTrain = rbind(activity_labels,TrainFold)
+
 # merge datasets and add labels
 allData <- rbind(train, test)
 colnames(allData) <- c("subject", "activity", featuresWanted.names)
 
-# turn activities & subjects into factors
-allData$activity <- factor(allData$activity, levels = activityLabels[,1], labels = activityLabels[,2])
-allData$subject <- as.factor(allData$subject)
 
-allData.melted <- melt(allData, id = c("subject", "activity"))
-allData.mean <- dcast(allData.melted, subject + activity ~ variable, mean)
+#Apply variable names
+colnames(finalData)<-c("Subject","Activity Label",colnames(setmeassurementsWanted))
 
-write.table(allData.mean, "tidy.txt", row.names = FALSE, quote = FALSE)
+#Create new data table to calculate means
+dataTable<-data.table(finalData)
+
+#Calculate mean by Subject and Activities and save it into new data frame
+summarizeAllData<-data.frame(dataTable[,lapply(.SD, mean, na.rm=TRUE), by=c("Activity Label","Subject") ])
+
+#Create tidy data set
+write.table(summarizeAllData, "tidy data set.txt", row.names = FALSE, quote = FALSE)
